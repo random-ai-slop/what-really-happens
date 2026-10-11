@@ -1,0 +1,211 @@
+/* Web player around a one-take film. The film's own styles are the project's engine/engine.css (loaded first,
+ * unchanged); its fonts are the composition's @font-face block, inlined in index.html by build-web.py. */
+
+:root {
+  --paper: #efeae0;
+  --paper-2: #f6f2ea;
+  --ink: #1e1d1a;
+  --gold: #ffc54d;
+  --gold-ink: #a26a05;
+  --ui-fg: #f3eee4;
+  --ui-dim: rgba(243, 238, 228, 0.62);
+  --ui-bg: rgba(14, 13, 12, 0.58);
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --serif: "Fraunces", Georgia, serif;
+  --zh: "OT Serif SC", "Fraunces", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  --edge: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
+  --menu-w: min(380px, calc(100vw - 2 * var(--edge)));
+}
+
+/* engine.css pins html/body to 1920×1080 for the renderer; the web page fills the window instead */
+html, body { width: 100%; height: 100%; overflow: hidden; background: #121110; overscroll-behavior: none; }
+body { -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; color: var(--ui-fg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus { outline: none; }
+button:focus-visible, #xp-scrub:focus-visible, [role="menuitemradio"]:focus-visible { outline: 1.5px solid var(--gold); outline-offset: 2px; border-radius: 6px; }
+
+/* ------------------------------------------------------------------ the stage, letterboxed */
+#xp-viewport { position: fixed; inset: 0; overflow: hidden; background: #121110; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: default; }
+#xp-frame { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+#xp-frame #root { contain: strict; }
+/* the renderer's default font (HyperFrames' headless Chrome: Times New Roman, whatever the machine's locale): film text
+   that sets no font-family (the seal's ring, a few labels) inherits it, so the page pins it instead of the browser's own
+   default (PingFang SC on a Chinese-locale Mac, for one) */
+#xp-frame #root { font-family: "Times New Roman", Times, serif; }
+#xp-tilt { position: absolute; inset: 0; pointer-events: none; transform-origin: 960px 640px; }
+body.xp-booting #xp-frame { visibility: hidden; }
+body.xp-explorable #xp-viewport { cursor: grab; }
+body.xp-explorable.xp-noexplore #xp-viewport { cursor: default; }
+body.xp-dragging #xp-viewport { cursor: grabbing; }
+body.xp-idle #xp-viewport { cursor: none; }
+
+/* caption modes: en = the engine's own caption (exactly the film); bi / zh = the bilingual block; off = neither */
+body:not(.xp-cc-en) #ot-cap { visibility: hidden !important; }
+body.xp-cc-en #ot-cap2, body.xp-cc-off #ot-cap2 { display: none !important; }
+body.xp-cc-off #ot-scrim { display: none; }
+
+/* the film's Run pill, clickable on the poster frame */
+#xp-runspot { position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 999px; display: none; cursor: pointer; }
+body.xp-poster #xp-runspot { display: block; }
+#xp-runspot::after { content: ""; position: absolute; inset: -10px; border-radius: inherit; box-shadow: 0 0 0 2px rgba(30, 29, 26, 0); transition: box-shadow 0.25s; }
+#xp-runspot:hover::after { box-shadow: 0 0 0 2px rgba(30, 29, 26, 0.35); }
+
+/* ------------------------------------------------------------------ chrome */
+#xp-ui { position: fixed; inset: 0; pointer-events: none; z-index: 2; font-family: var(--mono); }
+#xp-ui > * { pointer-events: auto; }
+[lang="zh-Hans"] { font-family: var(--zh); }
+
+#xp-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #121110; transition: opacity 0.5s; pointer-events: none; }
+#xp-loading span { font: italic 300 22px/1 var(--serif); color: var(--ui-dim); letter-spacing: 0.01em; }
+body:not(.xp-booting) #xp-loading { opacity: 0; }
+
+#xp-bar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 26px var(--edge) calc(6px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(10, 9, 8, 0.66) 0%, rgba(10, 9, 8, 0.38) 55%, rgba(10, 9, 8, 0) 100%);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+body.xp-idle #xp-bar, body.xp-idle #xp-top { opacity: 0; pointer-events: none; }
+body.xp-idle #xp-bar { transform: translateY(6px); }
+/* while the bar is up and would cover the captions (no letterbox band below the frame), the captions step up above it */
+#ot-cap, #ot-cap2 { transition: transform 0.35s ease; }
+body.xp-caplift #ot-cap, body.xp-caplift #ot-cap2 { transform: translateY(calc(-1 * var(--xp-caplift, 0px))); }
+
+/* scrub bar */
+#xp-scrub { position: relative; height: 22px; margin: 0 2px; cursor: pointer; touch-action: none; }
+#xp-scrub .track { position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1.5px; background: rgba(243, 238, 228, 0.2); border-radius: 2px; transition: height 0.15s, margin-top 0.15s; }
+#xp-scrub:hover .track, body.xp-scrubbing #xp-scrub .track { height: 5px; margin-top: -2.5px; }
+#xp-scrub .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--gold); border-radius: 2px; box-shadow: 0 0 10px rgba(255, 197, 77, 0.45); }
+#xp-scrub .hover { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(243, 238, 228, 0.22); border-radius: 2px; opacity: 0; }
+#xp-scrub:hover .hover { opacity: 1; }
+#xp-scrub .ticks i { position: absolute; top: -3px; bottom: -3px; width: 1.5px; margin-left: -0.75px; background: rgba(243, 238, 228, 0.38); border-radius: 1px; }
+#xp-scrub .ticks i.act { top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: rgba(243, 238, 228, 0.7); }
+#xp-scrub .head { position: absolute; top: 50%; left: 0; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(255, 197, 77, 0.18), 0 0 12px rgba(255, 197, 77, 0.6); transform: scale(0); transition: transform 0.15s; }
+#xp-scrub:hover .head, body.xp-scrubbing #xp-scrub .head, body.xp-paused #xp-scrub .head { transform: scale(1); }
+#xp-scrub .tip { position: absolute; bottom: 26px; left: 0; transform: translateX(-50%); white-space: nowrap; padding: 6px 10px 7px; border-radius: 8px; background: rgba(14, 13, 12, 0.86); opacity: 0; transition: opacity 0.15s; pointer-events: none; display: flex; gap: 9px; align-items: baseline; }
+#xp-scrub:hover .tip, body.xp-scrubbing #xp-scrub .tip { opacity: 1; }
+#xp-scrub .tip b { font: italic 400 15px/1 var(--serif); color: var(--ui-fg); }
+#xp-scrub .tip i { font: normal 500 13.5px/1 var(--zh); color: var(--ui-dim); }
+#xp-scrub .tip i:empty { display: none; }
+#xp-scrub .tip span { font-size: 11.5px; color: var(--ui-dim); }
+
+/* controls row */
+#xp-bar .row { display: flex; align-items: center; gap: 4px; height: 42px; min-width: 0; }
+#xp-bar .sp { flex: 1; min-width: 4px; }
+#xp-bar .row button { height: 36px; min-width: 36px; padding: 0 8px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--ui-fg); opacity: 0.88; transition: opacity 0.15s, background 0.15s; flex: none; }
+#xp-bar .row button:hover { opacity: 1; background: rgba(243, 238, 228, 0.09); }
+#xp-play { margin-left: -8px; }
+#xp-play svg { width: 22px; height: 22px; fill: currentColor; }
+#xp-play .i-pause { display: none; }
+body.xp-playing #xp-play .i-play { display: none; }
+body.xp-playing #xp-play .i-pause { display: inline; }
+#xp-fs svg { width: 20px; height: 20px; }
+#xp-time { font-size: 12.5px; letter-spacing: 0.02em; color: var(--ui-fg); margin: 0 10px 0 4px; white-space: nowrap; font-variant-numeric: tabular-nums; flex: none; }
+#xp-time .dur { color: var(--ui-dim); }
+#xp-bar .row #xp-chap { gap: 9px; min-width: 0; flex: 0 1 auto; overflow: hidden; justify-content: flex-start; }
+#xp-chap .n { font-size: 11px; color: var(--ui-dim); letter-spacing: 0.06em; flex: none; }
+#xp-chap .t { font: italic 400 16.5px/1.1 var(--serif); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#xp-chap .t[lang="zh-Hans"] { font: normal 500 15px/1.1 var(--zh); }
+#xp-cc { gap: 7px; }
+#xp-cc .cc { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; padding-bottom: 1px; box-shadow: inset 0 -2px 0 var(--gold); }
+#xp-cc .m { font-size: 11.5px; color: var(--ui-dim); white-space: nowrap; }
+#xp-cc .m:lang(zh-Hans), #xp-cc .m .z { font-family: var(--zh); font-weight: 500; font-size: 12.5px; }
+body.xp-cc-off #xp-cc .cc { box-shadow: none; opacity: 0.55; }
+#xp-q { font: italic 400 17px/1 var(--serif); }
+
+/* popovers: chapters (left), captions and help (right) */
+.xp-pop, #xp-chapters, #xp-ccmenu, #xp-help { position: absolute; bottom: 62px; border-radius: 12px; background: rgba(16, 15, 14, 0.94); box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45); max-width: calc(100vw - 2 * var(--edge)); }
+#xp-chapters { left: var(--edge); width: var(--menu-w); max-height: min(64vh, 600px); overflow: auto; overscroll-behavior: contain; padding: 8px 6px; }
+#xp-chapters ol { list-style: none; }
+#xp-chapters li { display: flex; align-items: baseline; gap: 12px; padding: 6px 12px; border-radius: 7px; cursor: pointer; }
+#xp-chapters li:hover { background: rgba(243, 238, 228, 0.08); }
+#xp-chapters li.on .t b { color: var(--gold); }
+#xp-chapters li .tm { font-size: 11px; color: var(--ui-dim); width: 34px; flex: none; font-variant-numeric: tabular-nums; }
+#xp-chapters li .t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#xp-chapters li .t b { font: italic 400 16px/1.25 var(--serif); }
+#xp-chapters li .t i { font: normal 500 13.5px/1.3 var(--zh); color: var(--ui-dim); letter-spacing: 0.02em; }
+#xp-chapters li.on .t i { color: rgba(255, 197, 77, 0.75); }
+#xp-chapters li.act { margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(243, 238, 228, 0.09); cursor: default; gap: 10px; }
+#xp-chapters li.act:first-child { margin-top: 0; border-top: 0; padding-top: 4px; }
+#xp-chapters li.act:hover { background: none; }
+#xp-chapters li.act span { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ui-dim); }
+#xp-chapters li.act span.z { font: normal 500 11.5px/1 var(--zh); letter-spacing: 0.1em; text-transform: none; color: rgba(243, 238, 228, 0.45); }
+
+#xp-ccmenu { right: var(--edge); padding: 6px; min-width: 190px; }
+#xp-ccmenu .h { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ui-dim); padding: 6px 12px 6px; }
+#xp-ccmenu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border-radius: 7px; text-align: left; font: italic 400 16px/1.2 var(--serif); }
+#xp-ccmenu button:hover { background: rgba(243, 238, 228, 0.08); }
+#xp-ccmenu button .z { font: normal 500 15px/1.2 var(--zh); font-style: normal; }
+#xp-ccmenu button::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1.5px var(--ui-dim); }
+#xp-ccmenu button[aria-checked="true"]::before { background: var(--gold); box-shadow: 0 0 8px rgba(255, 197, 77, 0.6); }
+#xp-ccmenu button[aria-checked="true"] { color: var(--gold); }
+
+#xp-help { right: var(--edge); padding: 14px 18px; }
+#xp-help dl { display: grid; grid-template-columns: auto auto; gap: 7px 18px; align-items: baseline; }
+#xp-help dt { font-size: 11.5px; color: var(--gold); text-align: right; white-space: nowrap; }
+#xp-help dd { font: italic 400 15px/1.2 var(--serif); color: var(--ui-fg); }
+
+/* top: explore hint + back to the shot */
+#xp-top { position: absolute; left: 0; right: 0; top: calc(14px + env(safe-area-inset-top)); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; transition: opacity 0.45s; padding: 0 var(--edge); }
+#xp-top > * { pointer-events: auto; }
+#xp-hint { font-size: 12px; letter-spacing: 0.03em; color: var(--ui-fg); padding: 7px 14px; border-radius: 999px; background: rgba(14, 13, 12, 0.5); opacity: 0; transform: translateY(-4px); transition: opacity 0.5s, transform 0.5s; pointer-events: none; text-align: center; max-width: 100%; }
+#xp-hint.on { opacity: 1; transform: none; }
+#xp-hint b { font-weight: 400; color: var(--gold); }
+#xp-back { display: inline-flex; align-items: center; gap: 9px; padding: 8px 16px 9px 12px; border-radius: 999px; background: var(--paper-2); color: var(--ink); font: italic 400 16.5px/1 var(--serif); box-shadow: 0 6px 26px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(30, 29, 26, 0.08); opacity: 0; transform: translateY(-6px) scale(0.96); transition: opacity 0.3s, transform 0.3s; pointer-events: none; }
+#xp-back svg { width: 17px; height: 17px; color: var(--gold-ink); }
+body.xp-off-shot #xp-back { opacity: 1; transform: none; pointer-events: auto; }
+
+/* inspect marks + note */
+#xp-marks { position: absolute; inset: 0; pointer-events: none; }
+#xp-marks button { position: absolute; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; pointer-events: auto; background: rgba(14, 13, 12, 0.55); box-shadow: 0 0 0 1.5px var(--gold), 0 0 16px rgba(255, 197, 77, 0.55); color: var(--gold); font: 700 14px/26px var(--mono); text-align: center; padding: 0; animation: xp-pulse 2.4s ease-in-out infinite; transition: opacity 0.25s; }
+#xp-marks button::after { content: ""; position: absolute; inset: -9px; border-radius: 50%; }   /* a 44 px touch target */
+#xp-marks button:hover { background: rgba(14, 13, 12, 0.85); }
+#xp-marks button.open { animation: none; background: var(--gold); color: var(--ink); }
+body:not(.xp-paused) #xp-marks, body.xp-dragging #xp-marks { opacity: 0; pointer-events: none; }
+body:not(.xp-paused) #xp-marks button, body.xp-dragging #xp-marks button { pointer-events: none; }
+@keyframes xp-pulse { 0%, 100% { box-shadow: 0 0 0 1.5px var(--gold), 0 0 10px rgba(255, 197, 77, 0.35); } 50% { box-shadow: 0 0 0 1.5px var(--gold), 0 0 0 7px rgba(255, 197, 77, 0.12), 0 0 22px rgba(255, 197, 77, 0.6); } }
+@media (prefers-reduced-motion: reduce) { #xp-marks button { animation: none; } }
+#xp-note { position: absolute; left: 0; top: 0; width: max-content; max-width: min(470px, calc(100vw - 2 * var(--edge))); max-height: calc(100vh - 120px); overflow: auto; overscroll-behavior: contain; padding: 16px 18px 15px; border-radius: 12px; background: var(--paper-2); color: var(--ink); box-shadow: 0 20px 70px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(30, 29, 26, 0.08); }
+#xp-note.wide { max-width: min(640px, calc(100vw - 2 * var(--edge))); }
+#xp-note h3 { font: italic 450 20px/1.15 var(--serif); margin-bottom: 8px; padding-right: 22px; }
+#xp-note p { font: 400 14.5px/1.45 var(--serif); margin: 6px 0; color: #3b3a35; }
+#xp-note pre, #xp-note .tbl { font: 11.5px/1.6 var(--mono); color: var(--ink); background: rgba(30, 29, 26, 0.05); border-radius: 7px; padding: 8px 10px; margin: 8px 0; white-space: pre; overflow-x: auto; max-width: 100%; }
+#xp-note .g { color: var(--gold-ink); font-weight: 700; }
+#xp-note .k { color: #a2462b; }
+#xp-note .d { color: #8a8476; }
+#xp-note .blk { color: #b5ad9c; letter-spacing: -0.05em; }
+#xp-note .x { position: absolute; right: 8px; top: 8px; width: 28px; height: 28px; border-radius: 50%; font: 400 18px/28px var(--mono); color: #7a756b; }
+#xp-note .x:hover { background: rgba(30, 29, 26, 0.07); }
+
+/* phone held upright */
+#xp-rotate { position: absolute; left: 0; right: 0; top: calc(18px + env(safe-area-inset-top)); display: none; justify-content: center; pointer-events: none; padding: 0 var(--edge); }
+#xp-rotate span { font: italic 400 15px/1 var(--serif); color: var(--ui-dim); padding: 8px 14px; border-radius: 999px; background: rgba(14, 13, 12, 0.5); }
+@media (orientation: portrait) and (max-width: 700px) { #xp-rotate { display: flex; top: 24vh; } }
+#xp-bar { z-index: 2; }
+#xp-note { z-index: 3; }
+
+#xp-perf { position: absolute; left: 10px; top: 10px; padding: 6px 9px; border-radius: 6px; background: rgba(0, 0, 0, 0.6); color: #9fe6ff; font-size: 11px; line-height: 1.45; white-space: pre; pointer-events: none; }
+
+/* small screens (phones in landscape, narrow windows) */
+@media (max-height: 520px), (max-width: 640px) {
+  #xp-bar { padding-top: 16px; }
+  #xp-bar .row { height: 36px; gap: 2px; }
+  #xp-bar .row button { padding: 0 6px; }
+  #xp-chap .n { display: none; }
+  #xp-chap .t { font-size: 14.5px; }
+  #xp-time { font-size: 11.5px; margin: 0 6px 0 2px; }
+  #xp-cc .m { display: none; }
+  #xp-q { display: none !important; }
+  #xp-chapters, #xp-ccmenu { bottom: 52px; max-height: calc(100vh - 80px); }
+  #xp-chapters li { padding: 4px 10px; }
+  #xp-chapters li .t b { font-size: 14.5px; }
+  #xp-chapters li .t i { font-size: 12.5px; }
+  #xp-hint { font-size: 11px; }
+  #xp-back { font-size: 15px; padding: 7px 14px 8px 10px; }
+  #xp-note { max-height: calc(100vh - 70px); padding: 12px 14px; }
+  #xp-note pre { font-size: 10.5px; }
+  #xp-note h3 { font-size: 17px; }
+  #xp-note p { font-size: 13.5px; }
+}
+@media (max-width: 380px) { #xp-time .dur { display: none; } }
+@media (hover: none) { #xp-q { display: none !important; } }

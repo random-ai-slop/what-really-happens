@@ -1,0 +1,6 @@
+/* The bilingual caption block (#ot-cap2: English above Chinese, bottom-anchored in the caption band), as the film's
+ * engine.css defines it for engine/layers.js. Loaded BEFORE engine.css and at zero specificity (:where), so a project
+ * whose engine.css has these rules wins; a project that predates them still gets the decided layout. */
+:where(#ot-cap2) { position: absolute; left: 140px; right: 140px; bottom: 52px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; pointer-events: none; }
+:where(#ot-cap2) .en { font-family: "Fraunces", serif; font-size: 36px; line-height: 1.22; font-weight: 420; letter-spacing: -0.005em; font-variation-settings: "opsz" 36; }
+:where(#ot-cap2) .zh { font-family: "OT Serif SC", "Fraunces", serif; font-size: 35px; line-height: 1.36; font-weight: 420; letter-spacing: 0.03em; white-space: pre-line; line-break: strict; }

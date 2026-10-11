@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#efeae0" />
+    <meta name="color-scheme" content="light" />
+    <title>What Really Happens · 到底发生了什么</title>
+    <meta name="description" content="Two one-take films about a C hello world: what happens before you click Run, and what happens when you do. They play live in the browser, so you can pause on any frame and walk around in it. English narration, English and Chinese captions." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="What Really Happens" />
+    <meta property="og:title" content="What Really Happens · 到底发生了什么" />
+    <meta property="og:description" content="Two one-take films about a C hello world: what happens before you click Run, and what happens when you do. Pause on any frame and walk around in it. English narration, English and Chinese captions." />
+    <meta property="og:url" content="https://random-ai-slop.github.io/what-really-happens/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:image" content="https://random-ai-slop.github.io/what-really-happens/click-run/poster.jpg" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="720" />
+    <meta property="og:image:alt" content="The title card of the first film: What Really Happens When You Click, and a Run button, over a C hello world" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="What Really Happens · 到底发生了什么" />
+    <meta name="twitter:description" content="Two one-take films about a C hello world: what happens before you click Run, and what happens when you do. Pause on any frame and walk around in it." />
+    <meta name="twitter:image" content="https://random-ai-slop.github.io/what-really-happens/click-run/poster.jpg" />
+    <meta name="twitter:image:alt" content="The title card of the first film: What Really Happens When You Click, and a Run button, over a C hello world" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1.5' y='7.5' width='29' height='17' rx='8.5' fill='%23efeae0' stroke='%231e1d1a' stroke-width='2'/%3E%3Cpath d='M12 11.5 L21 16 L12 20.5 Z' fill='%231e1d1a'/%3E%3C/svg%3E" />
+    <link rel="preload" href="click-run/assets/fonts/Fraunces-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      /* the films' own fonts, by relative path (no copies) + this page's own CJK subset (scripts/publish-site.py) */
+      @font-face { font-family: "Fraunces"; src: url("click-run/assets/fonts/Fraunces-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+      @font-face { font-family: "Fraunces"; src: url("click-run/assets/fonts/Fraunces-italic.woff2") format("woff2"); font-weight: 100 900; font-style: italic; font-display: swap; }
+      @font-face { font-family: "JetBrains Mono"; src: url("click-run/assets/fonts/JetBrainsMono-400.woff2") format("woff2"); font-weight: 400 800; font-style: normal; font-display: swap; }
+      @font-face { font-family: "OT Serif SC"; src: url("assets/fonts/zh-landing.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+2E80-10FFFF; }
+
+      :root {
+        --paper: #efeae0;
+        --paper-2: #f6f2ea;
+        --ink: #1e1d1a;
+        --ink-2: #5a564e;
+        --ink-3: #8a857b;
+        --rule: rgba(30, 29, 26, 0.14);
+        --gold-ink: #a26a05;
+        --serif: "Fraunces", Georgia, serif;
+        --zh: "OT Serif SC", "Fraunces", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+        --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+        --gutter: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { background: var(--paper); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      body {
+        min-height: 100vh;
+        background: radial-gradient(1400px 900px at 50% 38%, rgba(255, 252, 246, 0.55) 0%, rgba(255, 252, 246, 0) 60%), var(--paper);
+        color: var(--ink);
+        font: 400 17px/1.55 var(--serif);
+        font-variation-settings: "opsz" 14;
+        -webkit-font-smoothing: antialiased;
+      }
+      [lang="zh-Hans"] { font-family: var(--zh); font-variation-settings: normal; letter-spacing: 0.02em; }
+      a { color: inherit; }
+      .wrap { max-width: 1160px; margin: 0 auto; padding: 0 var(--gutter); }
+
+      header.wrap { padding-top: clamp(48px, 9vw, 112px); padding-bottom: clamp(36px, 5vw, 64px); }
+      .kicker { font: 500 12px/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-ink); }
+      .kicker span[lang] { letter-spacing: 0.2em; }
+      h1 { margin-top: 18px; font-weight: 400; font-size: clamp(44px, 8vw, 96px); line-height: 1; letter-spacing: -0.025em; font-variation-settings: "opsz" 144; }
+      h1 em { font-style: italic; }
+      .h1-zh { margin-top: 14px; font-size: clamp(24px, 3.6vw, 38px); line-height: 1.3; font-weight: 500; color: var(--ink); }
+      .lede { margin-top: 28px; max-width: 46em; display: grid; gap: 10px; }
+      .lede p { color: var(--ink-2); }
+      .lede p[lang="zh-Hans"] { font-size: 16px; line-height: 1.8; }
+
+      .films { display: grid; grid-template-columns: 1fr; gap: clamp(40px, 5vw, 56px); padding-bottom: clamp(48px, 7vw, 88px); }
+      @media (min-width: 760px) { .films { grid-template-columns: 1fr 1fr; } }
+      .film { display: block; text-decoration: none; color: inherit; border-radius: 10px; outline-offset: 6px; }
+      .film:focus-visible { outline: 1.5px solid var(--gold-ink); }
+      .poster { position: relative; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--paper-2);
+        box-shadow: 0 0 0 1px var(--rule), 0 1px 2px rgba(30, 29, 26, 0.06), 0 12px 32px -18px rgba(30, 29, 26, 0.35);
+        transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.35s; }
+      .poster img { display: block; width: 100%; height: 100%; object-fit: cover; }
+      .film:hover .poster, .film:focus-visible .poster { transform: translateY(-3px);
+        box-shadow: 0 0 0 1px var(--rule), 0 2px 4px rgba(30, 29, 26, 0.06), 0 22px 44px -20px rgba(30, 29, 26, 0.45); }
+      .meta { display: flex; gap: 14px; align-items: baseline; margin-top: 20px; font: 400 12px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+      .meta b { font-weight: 500; color: var(--gold-ink); }
+      .meta span[lang] { text-transform: none; letter-spacing: 0.12em; }
+      .film h2 { margin-top: 10px; font-weight: 450; font-size: clamp(25px, 2.6vw, 31px); line-height: 1.15; text-wrap: balance; letter-spacing: -0.012em; font-variation-settings: "opsz" 72; }
+      .film:hover h2 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; text-decoration-color: var(--rule); }
+      .film .zh-title { margin-top: 8px; font-size: 19px; line-height: 1.45; font-weight: 500; }
+      .film .line { margin-top: 14px; color: var(--ink-2); font-size: 16px; line-height: 1.5; }
+      .film .line[lang="zh-Hans"] { margin-top: 4px; font-size: 15px; line-height: 1.7; }
+
+      footer.wrap { padding-top: 28px; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+      footer { border-top: 1px solid var(--rule); display: grid; gap: 18px; font-size: 14px; color: var(--ink-2); }
+      footer h3 { font: 500 11.5px/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+      footer .cols { display: grid; gap: 22px; }
+      @media (min-width: 760px) { footer .cols { grid-template-columns: 1fr 1fr; gap: 56px; } }
+      footer p + p { margin-top: 4px; }
+      footer p[lang="zh-Hans"] { font-size: 13.5px; line-height: 1.75; }
+      kbd { font: 500 12px/1 var(--mono); padding: 2px 5px 1px; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; background: var(--paper-2); color: var(--ink); }
+      footer a { text-decoration-color: var(--rule); text-underline-offset: 3px; }
+      footer a:hover { text-decoration-color: currentColor; }
+      .small { font: 400 12px/1.6 var(--mono); color: var(--ink-3); }
+    </style>
+  </head>
+  <body>
+    <header class="wrap">
+      <p class="kicker">Two one-take films <span lang="zh-Hans">· 两部一镜到底的短片</span></p>
+      <h1>What <em>Really</em> Happens</h1>
+      <p class="h1-zh" lang="zh-Hans">到底发生了什么</p>
+      <div class="lede">
+        <p>One C hello world, followed all the way down: what has to happen before the Run button means anything, and what happens when you click it. Each film plays live in your browser, so you can pause on any frame and walk around inside it.</p>
+        <p lang="zh-Hans">跟着一个 C 语言的 hello world 一路往下走：Run 按钮能起作用之前，要先发生些什么；点下它之后，又发生了什么。两部片子都在浏览器里实时播放，随时暂停，就能走进画面四处看看。</p>
+      </div>
+    </header>
+
+    <main class="wrap films">
+      <a class="film" href="click-run/">
+        <div class="poster"><img src="click-run/poster.jpg" width="1280" height="720" alt="The title card: What Really Happens When You Click, and a Run button, over a C hello world" /></div>
+        <p class="meta"><b>Episode 1</b><span lang="zh-Hans">第一集</span><span>5:49</span></p>
+        <h2>What Really Happens When You Click Run</h2>
+        <p class="zh-title" lang="zh-Hans">点下 Run 的那一瞬间，到底发生了什么？</p>
+        <p class="line">From the Run button down to silicon, and back up as light.</p>
+        <p class="line" lang="zh-Hans">从 Run 按钮一路下到硅片，再化作光回到屏幕上。</p>
+      </a>
+      <a class="film" href="before-run/">
+        <div class="poster"><img src="before-run/poster.jpg" width="1280" height="720" alt="hello.c in an editor, the pointer on its Run button" /></div>
+        <p class="meta"><b>Episode 2</b><span lang="zh-Hans">第二集</span><span>7:32</span></p>
+        <h2>What Really Happens Before You Click Run</h2>
+        <p class="zh-title" lang="zh-Hans">点下 Run 之前，到底发生了什么？</p>
+        <p class="line">Power, firmware, a kernel, 77,000 packets, one keystroke and one save, all before Run means anything.</p>
+        <p class="line" lang="zh-Hans">通电、固件、内核、7.7 万个数据包、一次按键、一次保存：都发生在 Run 起作用之前。</p>
+      </a>
+    </main>
+
+    <footer class="wrap">
+      <div class="cols">
+        <div>
+          <h3>Watching</h3>
+          <p>Click <b>Run</b> or press <kbd>space</kbd> to play, drag the bar to seek, <kbd>C</kbd> cycles captions. Pause, then drag to look around; a small <b>+</b> beside an object opens a note.</p>
+          <p lang="zh-Hans">点 <b>Run</b> 或按空格键播放，拖动进度条跳转，按 <kbd>C</kbd> 切换字幕。暂停后拖动画面就能四处看看，物体旁的小 <b>+</b> 号会打开注释。</p>
+        </div>
+        <div>
+          <h3>Credits</h3>
+          <p>Narration: HeyGen voice “Vincent” (episode 1), ElevenLabs voice “Andrew” (episode 2). Built with HyperFrames and a custom one-take engine. Fonts: Fraunces, JetBrains Mono and Noto Serif SC, under the SIL Open Font License 1.1.</p>
+          <p class="small"><a href="https://github.com/random-ai-slop/what-really-happens">github.com/random-ai-slop/what-really-happens</a></p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

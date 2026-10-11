@@ -1,0 +1,200 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #efeae0; }
+#root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+#scene { position: absolute; inset: 0; overflow: hidden; }
+
+#ot-ground { position: absolute; inset: 0; background: #efeae0; }
+#ot-grain { position: absolute; inset: 0; opacity: 0.5; mix-blend-mode: multiply; pointer-events: none; }
+#ot-grain svg { width: 100%; height: 100%; display: block; }
+/* dark grounds: Chrome draws the vignette without dithering, so near black it steps in 1-level rings ~200 px wide.
+   A faint static white noise under the world (±1.5 levels) breaks them up; it survives crf 15. */
+#ot-dither { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+#ot-dither svg { width: 100%; height: 100%; display: block; }
+#ot-roll { position: absolute; inset: 0; transform-origin: 960px 640px; }
+#ot-stage { position: absolute; inset: 0; perspective: 1000px; perspective-origin: 960px 640px; }
+#ot-world { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-style: preserve-3d; }
+.ot-seq { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-style: preserve-3d; }
+.ot-plane { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.ot-free { position: absolute; left: 0; top: 0; }
+.ot-3d { transform-style: preserve-3d; }
+#ot-screen { position: absolute; inset: 0; pointer-events: none; }
+.ot-seq-screen { position: absolute; inset: 0; }
+#ot-hero { position: absolute; left: 0; top: 0; font-family: "JetBrains Mono", monospace; font-weight: 700; white-space: pre; color: #ffc54d; visibility: hidden; }
+#ot-vignette { position: absolute; inset: 0; background: radial-gradient(1300px 820px at 50% 55%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%); opacity: 0.25; pointer-events: none; }
+#ot-flash { position: absolute; inset: 0; background: #fff8ee; opacity: 0; }
+#ot-scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 300px; pointer-events: none; }
+#ot-cap { position: absolute; left: 160px; right: 160px; bottom: 64px; text-align: center; font-family: "Fraunces", serif; font-size: 40px; line-height: 1.25; font-weight: 420; letter-spacing: -0.005em; font-variation-settings: "opsz" 36; color: #1e1d1a; }
+#ot-fade { position: absolute; inset: 0; background: #000; opacity: 0; }
+.ot-mote { position: absolute; left: 0; top: 0; font-family: "JetBrains Mono", monospace; line-height: 1; border-radius: 50%; }
+/* attention lamp (engine/focus.js): inserted above the scrim, below the captions. Multiply = shadow, screen = light. */
+#ot-shade { position: absolute; inset: 0; pointer-events: none; visibility: hidden; mix-blend-mode: multiply; }
+#ot-lift { position: absolute; inset: 0; pointer-events: none; visibility: hidden; mix-blend-mode: screen; }
+#ot-lamp-dither { position: absolute; inset: 0; pointer-events: none; visibility: hidden; }
+#ot-lamp-dither svg { width: 100%; height: 100%; display: block; }
+
+/* ---------- code: one syntax palette for paper, one for night ---------- */
+.ot-code { position: absolute; left: 0; top: 0; font-family: "JetBrains Mono", monospace; white-space: pre; }
+.ot-code .row { position: absolute; left: 0; white-space: pre; }
+.ot-code.paper { color: #2a2925; }
+.ot-code.paper .k { color: #a2462b; }
+.ot-code.paper .pp { color: #4f6688; }
+.ot-code.paper .fn { color: #1e1d1a; font-weight: 700; }
+.ot-code.paper .s { color: #a26a05; }
+.ot-code.paper .esc { color: #8a5300; }
+.ot-code.paper .num { color: #6d5ba8; }
+.ot-code.paper .pu { color: #7a756b; }
+.ot-code.paper .ty { color: #2f6e6a; }
+.ot-code.paper .cm { color: #9a9384; }
+.ot-code.night { color: #e6eef8; }
+.ot-code.night .k { color: #ffb59a; }
+.ot-code.night .pp { color: #b9ccff; }
+.ot-code.night .fn { color: #ffffff; font-weight: 700; }
+.ot-code.night .s { color: #ffc54d; text-shadow: 0 0 16px rgba(255, 190, 70, 0.55); }
+.ot-code.night .esc { color: #ffe08f; }
+.ot-code.night .num { color: #c9b8ff; }
+.ot-code.night .pu { color: #9fb3c8; }
+.ot-code.night .ty { color: #8fe0d6; }
+.ot-code.night .cm { color: #6f7f94; }
+.ot-code.night .reg { color: #8fe0ff; }
+.ot-code.night .lbl { color: #b9ccff; }
+.ot-code.night .hex { color: #82dcff; text-shadow: 0 0 12px rgba(90, 200, 255, 0.45); }
+
+/* ---------- the surface page (editor + terminal) ---------- */
+.ot-page { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; font-family: "JetBrains Mono", monospace; }
+.ot-page .tab { position: absolute; left: 520px; top: 262px; font-size: 22px; color: #9a9384; letter-spacing: 0.02em; }
+.ot-page .tab b { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c9c1b2; margin-right: 10px; vertical-align: 3px; }
+.ot-page .ln { position: absolute; left: 430px; width: 50px; text-align: right; font-size: 22px; line-height: 72px; color: #c2bbad; }
+.ot-page .rule { position: absolute; left: 520px; top: 712px; width: 880px; height: 2px; background: #d8d1c3; }
+.ot-page .term { position: absolute; left: 520px; top: 732px; width: 880px; }
+.ot-page .tl { position: absolute; left: 0; height: 50px; line-height: 50px; font-size: 32px; white-space: pre; color: #3b3a35; }
+.ot-page .tl .pr { color: #a59e8f; }
+.ot-page .tl .out { color: #a26a05; font-weight: 700; }
+.ot-page .tl .dim { color: #a59e8f; }
+.ot-page .tcaret { position: absolute; width: 3px; height: 38px; background: #1e1d1a; }
+.ot-page .pill { position: absolute; left: 1250px; top: 250px; width: 150px; height: 52px; border: 2.5px solid #1e1d1a; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 25px; font-weight: 700; color: #1e1d1a; transform-origin: 100% 50%; }
+.ot-page .pill svg { display: block; width: 18px; height: 20px; }
+
+/* ---------- the executable on disk ---------- */
+.ot-slab { position: absolute; left: 0; top: 0; width: 760px; height: 470px; border-radius: 6px; background: linear-gradient(180deg, #121826 0%, #0b0f19 100%); box-shadow: 0 0 0 1.5px rgba(140, 200, 255, 0.35), 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 80px rgba(80, 160, 255, 0.12); overflow: hidden; font-family: "JetBrains Mono", monospace; }
+.ot-slab .hdr { position: absolute; left: 0; right: 0; top: 0; height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 26px; border-bottom: 1.5px solid rgba(140, 200, 255, 0.25); }
+.ot-slab .name { font-size: 30px; font-weight: 700; color: #eef4ff; }
+.ot-slab .magic { font-size: 22px; color: #ffc54d; text-shadow: 0 0 12px rgba(255, 190, 70, 0.6); }
+.ot-slab .kind { margin-left: auto; font-size: 18px; color: rgba(160, 200, 255, 0.7); letter-spacing: 0.04em; }
+.ot-slab .bytes { position: absolute; left: 26px; top: 84px; right: 26px; font-size: 19px; line-height: 30px; color: rgba(130, 220, 255, 0.55); white-space: pre; }
+.ot-slab .bytes b { color: #ffc54d; font-weight: 400; }
+.ot-slab .size { position: absolute; right: 26px; bottom: 16px; font-size: 18px; color: rgba(160, 200, 255, 0.7); }
+
+/* ---------- a process: a cell of light ---------- */
+.ot-cell { position: absolute; left: 0; top: 0; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle at 42% 38%, rgba(255, 236, 200, 0.42), rgba(255, 196, 120, 0.16) 52%, rgba(255, 170, 90, 0.04) 72%, rgba(255, 170, 90, 0) 74%); box-shadow: inset 0 0 0 2px rgba(255, 214, 160, 0.55), 0 0 60px rgba(255, 190, 110, 0.22); font-family: "JetBrains Mono", monospace; }
+.ot-cell .lab { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-size: 30px; color: #fff3df; font-weight: 700; }
+.ot-cell .pid { position: absolute; left: 0; right: 0; top: calc(50% + 30px); text-align: center; font-size: 20px; color: rgba(255, 230, 200, 0.7); }
+
+/* ---------- the address space ---------- */
+.ot-mem { position: absolute; left: 0; top: 0; width: 640px; font-family: "JetBrains Mono", monospace; }
+.ot-mem .band { position: absolute; left: 0; width: 640px; border-radius: 4px; border: 1.5px solid rgba(255, 220, 170, 0.7); background: rgba(255, 210, 150, 0.08); }
+.ot-mem .band.promised { border-style: dashed; border-color: rgba(255, 220, 170, 0.45); background: transparent; }
+.ot-mem .band.code { border-color: rgba(140, 220, 255, 0.85); background: rgba(120, 200, 255, 0.1); }
+.ot-mem .band.code.promised { border-color: rgba(140, 220, 255, 0.5); background: transparent; }
+.ot-mem .band .nm { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 22px; color: #fff1dc; }
+.ot-mem .band .pm { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 18px; color: rgba(255, 230, 200, 0.6); }
+.ot-mem .band .gold { color: #ffc54d; text-shadow: 0 0 12px rgba(255, 190, 70, 0.6); }
+.ot-mem .addr { position: absolute; left: -210px; width: 190px; text-align: right; font-size: 17px; color: rgba(220, 210, 255, 0.55); }
+
+/* ---------- terminal replay (engine/term.js): paper = the page's terminal, night = a dark window ---------- */
+.ot-term { position: absolute; font-family: "JetBrains Mono", monospace; white-space: pre; }
+.ot-term .tw-bg { position: absolute; inset: 0; border-radius: 22px; }
+.ot-term .tw-title { position: absolute; left: 0; right: 0; top: 0; text-align: center; letter-spacing: 0.02em; border-radius: 22px 22px 0 0; }
+.ot-term .tw-scr { position: absolute; overflow: hidden; }
+.ot-term .tr { position: absolute; left: 0; top: 0; right: 0; white-space: pre; }
+.ot-term .tr.hot { font-weight: 700; }
+.ot-term .tcar { position: absolute; left: 0; top: 0; }
+.ot-term.paper { color: #3b3a35; }
+.ot-term.paper.framed .tw-bg { background: #f6f2ea; box-shadow: 0 30px 90px rgba(40, 30, 15, 0.22), 0 0 0 2px rgba(120, 105, 80, 0.16); }
+.ot-term.paper .tw-title { background: rgba(0, 0, 0, 0.05); color: #8a8478; }
+.ot-term.paper .p { color: #a59e8f; }
+.ot-term.paper .cmd { color: #1e1d1a; }
+.ot-term.paper .d { color: #a59e8f; }
+.ot-term.paper .pk { color: #1e1d1a; }
+.ot-term.paper .sz { color: #5b574e; }
+.ot-term.paper .em { color: #1e1d1a; font-weight: 700; }
+.ot-term.paper .g { color: #3d7a4a; }
+.ot-term.paper .y { color: #8c7330; }
+.ot-term.paper .r { color: #a2462b; }
+.ot-term.paper .b { font-weight: 700; }
+.ot-term.paper .tr.hot { background: rgba(30, 29, 26, 0.06); color: #1e1d1a; }
+.ot-term.paper .tcar { background: #1e1d1a; }
+.ot-term.night { color: #d9d2c3; }
+.ot-term.night.framed .tw-bg { background: #1d1c19; box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55), 0 0 0 1.5px rgba(160, 200, 255, 0.16); }
+.ot-term.night .tw-title { background: rgba(255, 255, 255, 0.04); color: #7d7a70; }
+.ot-term.night .p { color: #8a8478; }
+.ot-term.night .cmd { color: #f4efe4; }
+.ot-term.night .d { color: #7d7a70; }
+.ot-term.night .pk { color: #f4efe4; }
+.ot-term.night .sz { color: #b9b2a3; }
+.ot-term.night .em { color: #ffffff; font-weight: 700; }
+.ot-term.night .g { color: #8fd19e; }
+.ot-term.night .y { color: #d8c27a; }
+.ot-term.night .r { color: #ff9a7a; }
+.ot-term.night .b { font-weight: 700; }
+.ot-term.night .tr.hot { color: #ffffff; text-shadow: 0 0 14px rgba(160, 220, 255, 0.45); }
+.ot-term.night .tcar { background: #e6eef8; }
+
+/* ---------- packet flow (engine/flow.js): one canvas + a few labelled packets ---------- */
+.ot-flow { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.ot-flow canvas { display: block; }
+.ot-flow .fb-dot { position: absolute; left: 0; top: 0; border-radius: 50%; }
+.ot-flow .fb-tail { position: absolute; left: 0; top: 0; transform-origin: 0 0; border-radius: 99px; }
+.ot-flow .fb-ring { position: absolute; left: 0; top: 0; border-radius: 50%; border: 2px solid; }
+.ot-flow .fb-lab { position: absolute; left: 0; top: 0; font-family: "JetBrains Mono", monospace; font-weight: 700; white-space: pre; letter-spacing: 0.02em; text-shadow: 0 0 14px rgba(0, 0, 0, 0.6); }
+
+/* ---------- episode-2 baton components (engine.js OT.C.*): values copied verbatim from A.js / B.js ---------- */
+/* B's bootloader card (.b-card) and its wax seal (.b-stamp) */
+.ot-bootcard { position: absolute; left: 0; top: 0; width: 620px; height: 230px; border-radius: 16px; background: linear-gradient(180deg, #1b1611, #120e0b); box-shadow: 0 0 0 2px rgba(255, 200, 140, 0.5), 0 40px 120px rgba(0, 0, 0, 0.6); font-family: "JetBrains Mono", monospace; }
+.ot-bootcard .n { position: absolute; left: 40px; top: 44px; font-size: 48px; font-weight: 700; color: #ffc54d; text-shadow: 0 0 16px rgba(255, 190, 70, 0.55); }
+.ot-bootcard .s { position: absolute; left: 40px; top: 126px; font-size: 24px; color: rgba(255, 230, 200, 0.6); }
+.ot-seal { position: absolute; left: 0; top: 0; }
+/* A's pointer, desktop and editor window */
+.ot-pointer { position: absolute; left: 0; top: 0; width: 34px; height: 48px; }
+.ot-desk { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.ot-desk-wall { position: absolute; left: -1700px; top: -905px; width: 5320px; height: 2700px; overflow: hidden; }
+.ot-desk-top { position: absolute; left: -1700px; top: -905px; width: 5320px; height: 88px; background: #1e1d1a; font-family: "JetBrains Mono", monospace; }
+.ot-desk-top .clk { position: absolute; left: 0; right: 0; top: 0; line-height: 88px; text-align: center; font-size: 36px; color: #efeae0; letter-spacing: 0.04em; }
+.ot-desk-top .st { position: absolute; right: 1810px; top: 28px; display: flex; gap: 26px; }
+.ot-desk-top .st i { display: block; width: 34px; height: 32px; border-radius: 6px; background: #efeae0; opacity: 0.85; }
+.ot-desk-dock { position: absolute; left: -1330px; top: -80px; width: 200px; height: 1440px; border-radius: 60px; background: rgba(30, 29, 26, 0.88); }
+.ot-desk-icon { position: absolute; left: 30px; width: 140px; height: 140px; border-radius: 34px; display: flex; align-items: center; justify-content: center; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 54px; transform-origin: 50% 50%; }
+.ot-desk-icon.on::after { content: ""; position: absolute; right: -24px; top: 58px; width: 14px; height: 24px; border-radius: 7px; background: #efeae0; }
+.ot-desk-twin { position: absolute; border-radius: 24px; box-shadow: 0 30px 90px rgba(40, 30, 15, 0.25); overflow: hidden; font-family: "JetBrains Mono", monospace; }
+.ot-desk-twin.term { background: #26241f; color: #d9d2c3; font-size: 38px; line-height: 64px; padding: 90px 50px; white-space: pre; }
+.ot-desk-twin.term b { color: #a59e8f; font-weight: 400; }
+.ot-desk-twin.files { background: #f3efe6; }
+.ot-desk-twin.files .row { position: absolute; left: 60px; height: 84px; line-height: 84px; font-size: 36px; color: #5b574e; }
+.ot-desk-twin.files .row::before { content: ""; display: inline-block; width: 56px; height: 42px; border-radius: 8px; background: #cdbf9f; margin-right: 30px; vertical-align: -6px; }
+.ot-desk-twin .tb { position: absolute; left: 0; top: 0; right: 0; height: 76px; background: rgba(0, 0, 0, 0.08); }
+.ot-ed { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.ot-ed-win { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #efeae0; }
+.ot-ed-bar { position: absolute; left: 0; top: 0; width: 1920px; height: 84px; background: #e4ddcf; border-bottom: 2px solid #d6cebf; }
+.ot-ed-bar .t { position: absolute; left: 0; right: 0; top: 0; height: 84px; line-height: 84px; text-align: center; font-family: "JetBrains Mono", monospace; font-size: 30px; color: #8a8478; }
+.ot-ed-bar .x { position: absolute; right: 34px; top: 22px; width: 40px; height: 40px; border-radius: 50%; background: #d6cebf; color: #6f695e; font: 700 26px/40px "JetBrains Mono", monospace; text-align: center; }
+.ot-ed-caret { position: absolute; left: 0; top: 0; width: 4px; height: 54px; background: #1e1d1a; }
+/* the gold line of packets (D → E) */
+.ot-seqline { position: absolute; left: 0; top: 0; }
+.ot-seqcell { position: absolute; top: 0; border-radius: 5px; background: #ffc54d; box-shadow: 0 0 12px rgba(255, 190, 70, 0.55); }
+/* the package (E, G). No font-family on the box itself: the seal inherits the page font like B's stamp. */
+.ot-parcel { position: absolute; left: 0; top: 0; width: 600px; height: 320px; border-radius: 14px; background: linear-gradient(180deg, #2a2118, #1d1711); box-shadow: 0 0 0 2px rgba(255, 214, 160, 0.55); }
+.ot-parcel-name { position: absolute; left: 36px; top: 34px; font: 700 24px "JetBrains Mono", monospace; color: #ffc54d; text-shadow: 0 0 14px rgba(255, 190, 70, 0.55); white-space: pre; }
+.ot-parcel-size { position: absolute; left: 36px; top: 74px; font: 20px "JetBrains Mono", monospace; color: rgba(255, 226, 196, 0.6); white-space: pre; }
+.ot-parcel-member { position: absolute; left: 36px; width: 380px; border-radius: 6px; border: 1.5px solid rgba(255, 214, 160, 0.28); background: rgba(255, 214, 160, 0.05); }
+.ot-parcel-member span { position: absolute; left: 14px; top: 0; font: 18px "JetBrains Mono", monospace; color: rgba(255, 226, 196, 0.55); white-space: pre; }
+/* local light: B's press bloom generalised (engine.js OT.C.bloom sets size, margin and the gradient) */
+.ot-bloom { position: absolute; left: 0; top: 0; border-radius: 50%; pointer-events: none; }
+
+/* ---------- layer split + bilingual captions (engine/layers.js) ---------- */
+html[data-ot-layer="captions"], html[data-ot-layer="captions"] body { background: transparent !important; }
+html[data-ot-layer="captions"] #scene > :not(#ot-cap):not(#ot-cap2) { display: none !important; }
+/* bilingual block: English line(s), the Chinese line(s) under them, bottom-anchored in the caption band */
+#ot-cap2 { position: absolute; left: 140px; right: 140px; bottom: 52px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+#ot-cap2 .en { font-family: "Fraunces", serif; font-size: 36px; line-height: 1.22; font-weight: 420; letter-spacing: -0.005em; font-variation-settings: "opsz" 36; }
+/* Chinese: "OT Serif SC" = Noto Serif SC Medium (500), the family's only face (@font-face in index.html), so weight 420
+   draws Han in Medium while Latin words inside the line, outside the face's unicode-range, use Fraunces 420 */
+#ot-cap2 .zh { font-family: "OT Serif SC", "Fraunces", serif; font-size: 35px; line-height: 1.36; font-weight: 420; letter-spacing: 0.03em; white-space: pre-line; line-break: strict; }
